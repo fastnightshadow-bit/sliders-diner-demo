@@ -21,7 +21,7 @@ document.addEventListener('click', event => { if (!event.target.closest('.site-h
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && navToggle.getAttribute('aria-expanded') === 'true') closeNav(true);
 });
-window.matchMedia('(min-width: 601px)').addEventListener('change', () => closeNav());
+window.matchMedia('(min-width: 1001px)').addEventListener('change', () => closeNav());
 
 const filters = document.querySelector('.filters');
 const cards = [...document.querySelectorAll('.food-card')];
@@ -347,7 +347,7 @@ window.addEventListener('storage', event => {
 
 // The requested desktop direction: visible going down, hidden going up.
 const desktopHeader = document.querySelector('.site-header');
-const desktopQuery = window.matchMedia('(min-width: 801px)');
+const desktopQuery = window.matchMedia('(min-width: 1001px)');
 let headerScrollAnchor = window.scrollY;
 let headerFrame = 0;
 function updateDesktopHeader() {
