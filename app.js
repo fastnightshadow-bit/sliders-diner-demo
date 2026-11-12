@@ -32,13 +32,41 @@ const countLabel = count => {
 };
 const searchInput = document.getElementById('menu-search');
 const normalizeQuery = value => value.toLocaleLowerCase('ru-RU').replace(/ё/g, 'е').trim();
+const menuTags = document.querySelector('.menu-tags');
+const favoriteButtons = [...document.querySelectorAll('[data-favorite]')];
+const favorites = new Set();
+const favoritesStorageKey = 'sliders-favorites-v1';
+let favoritesStorageAvailable = true;
+const classicDishes = new Set(['original', 'retro']);
 let selectedCategory = 'all';
+let selectedTag = 'all';
+function readFavorites() {
+  if (!favoritesStorageAvailable) return;
+  try {
+    const saved = JSON.parse(localStorage.getItem(favoritesStorageKey) || '[]');
+    if (!Array.isArray(saved)) return;
+    favorites.clear();
+    saved.forEach(id => { if (dishes.has(id)) favorites.add(id); });
+  } catch { favoritesStorageAvailable = false; }
+}
+function updateFavoriteButtons() {
+  favoriteButtons.forEach(button => {
+    const active = favorites.has(button.dataset.favorite);
+    button.setAttribute('aria-pressed', String(active));
+    button.setAttribute('aria-label', `${active ? 'Убрать из избранного' : 'В избранное'}: ${dishes.get(button.dataset.favorite).name}`);
+  });
+}
 function applyMenuFilters() {
   const terms = normalizeQuery(searchInput?.value || '').split(/\s+/).filter(Boolean);
   cards.forEach(card => {
     const dish = dishes.get(card.dataset.dish);
     const haystack = normalizeQuery([dish.name, dish.label, ...dish.ingredients].join(' '));
-    card.hidden = (selectedCategory !== 'all' && card.dataset.category !== selectedCategory) || !terms.every(term => haystack.includes(term));
+    const matchesTag = selectedTag === 'all'
+      || (selectedTag === 'classic' && classicDishes.has(dish.id))
+      || (selectedTag === 'bacon' && dish.ingredients.some(ingredient => /бекон/i.test(ingredient)))
+      || (selectedTag === 'favorite' && favorites.has(dish.id));
+    card.hidden = (selectedCategory !== 'all' && card.dataset.category !== selectedCategory)
+      || !matchesTag || !terms.every(term => haystack.includes(term));
   });
   const shown = cards.filter(card => !card.hidden).length;
   if (menuCount) menuCount.textContent = countLabel(shown) + ' в меню';
@@ -48,7 +76,14 @@ function applyMenuFilters() {
     section.querySelector('[data-section-count]').textContent = visible;
   });
   const empty = document.getElementById('menu-empty');
-  if (empty) empty.hidden = shown > 0;
+  if (empty) {
+    empty.hidden = shown > 0;
+    const noFavorites = selectedTag === 'favorite' && favorites.size === 0;
+    empty.querySelector('p').textContent = noFavorites ? 'Здесь будут любимые блюда' : 'Пока ничего не нашлось';
+    empty.querySelector('span').textContent = noFavorites ? 'Нажми на сердечко у блюда, чтобы сохранить его' : 'Попробуй другой поиск или выбери все блюда';
+  }
+  const results = document.getElementById('menu-results');
+  if (results) results.textContent = `Показано: ${countLabel(shown)}`;
 }
 filters.querySelectorAll('[data-filter]').forEach(button => {
   const category = button.dataset.filter;
@@ -64,14 +99,46 @@ filters.addEventListener('click', event => {
   selectedCategory = button.dataset.filter;
   filters.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
   applyMenuFilters();
-  if (searchInput) document.querySelector('.catalog-toolbar').scrollIntoView({behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'start'});
 });
+menuTags?.addEventListener('click', event => {
+  const button = event.target.closest('[data-menu-tag]');
+  if (!button) return;
+  selectedTag = button.dataset.menuTag;
+  menuTags.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+  applyMenuFilters();
+});
+favoriteButtons.forEach(button => button.addEventListener('click', () => {
+  readFavorites();
+  const id = button.dataset.favorite;
+  if (favorites.has(id)) favorites.delete(id); else favorites.add(id);
+  if (favoritesStorageAvailable) try { localStorage.setItem(favoritesStorageKey, JSON.stringify([...favorites])); } catch { favoritesStorageAvailable = false; }
+  updateFavoriteButtons();
+  applyMenuFilters();
+  showMenuFeedback(favorites.has(id) ? 'Сохранено в избранном' : 'Убрано из избранного');
+  if (button.closest('.food-card').hidden) menuTags.querySelector('[data-menu-tag="favorite"]').focus({preventScroll:true});
+}));
 searchInput?.addEventListener('input', applyMenuFilters);
 document.getElementById('menu-reset')?.addEventListener('click', () => {
   searchInput.value = '';
-  filters.querySelector('[data-filter="all"]').click();
-  searchInput.focus();
+  selectedCategory = selectedTag = 'all';
+  filters.querySelectorAll('[data-filter]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === 'all')));
+  menuTags?.querySelectorAll('[data-menu-tag]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.menuTag === 'all')));
+  applyMenuFilters();
+  searchInput.focus({preventScroll:true});
 });
+function syncFavorites() { readFavorites(); updateFavoriteButtons(); applyMenuFilters(); }
+syncFavorites();
+window.addEventListener('pageshow', event => { if (event.persisted) syncFavorites(); });
+window.addEventListener('storage', event => { if (event.key === favoritesStorageKey || event.key === null) syncFavorites(); });
+let menuFeedbackTimer;
+function showMenuFeedback(message) {
+  const feedback = document.getElementById('menu-feedback');
+  if (!feedback) return;
+  clearTimeout(menuFeedbackTimer);
+  feedback.textContent = message;
+  feedback.classList.add('is-visible');
+  menuFeedbackTimer = setTimeout(() => feedback.classList.remove('is-visible'), 2200);
+}
 
 // SVG masks hide the poster background without repainting any food pixels.
 const svgNS = 'http://www.w3.org/2000/svg';
@@ -252,8 +319,10 @@ const cartToggle = document.querySelector('.cart-toggle');
 const cartItems = document.getElementById('cart-items');
 const cart = new Map();
 const cartStorageKey = 'sliders-demo-cart-v1';
+let cartStorageAvailable = true;
 let cartReturnFocus = cartToggle;
 function readSavedCart() {
+  if (!cartStorageAvailable) return;
   try {
     const saved = JSON.parse(localStorage.getItem(cartStorageKey) || '[]');
     if (!Array.isArray(saved)) return;
@@ -261,7 +330,7 @@ function readSavedCart() {
     saved.forEach(entry => {
       if (Array.isArray(entry) && dishes.has(entry[0]) && Number.isInteger(entry[1]) && entry[1] > 0 && entry[1] <= 99) cart.set(entry[0], entry[1]);
     });
-  } catch { /* Storage may be unavailable; keep the in-memory basket. */ }
+  } catch { cartStorageAvailable = false; }
 }
 readSavedCart();
 const rubles = value => new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
@@ -297,7 +366,7 @@ function updateCart(persist = true) {
   document.querySelector('.cart-call').hidden = count === 0;
   document.querySelector('.cart-hint').hidden = count === 0;
   document.getElementById('cart-status').textContent = 'В корзине порций: ' + count + '. Итого ' + rubles(total);
-  if (persist) try { localStorage.setItem(cartStorageKey, JSON.stringify([...cart])); } catch { /* Optional persistence. */ }
+  if (persist && cartStorageAvailable) try { localStorage.setItem(cartStorageKey, JSON.stringify([...cart])); } catch { cartStorageAvailable = false; }
 }
 function openCart(returnFocus = cartToggle) {
   readSavedCart(); updateCart(false);
@@ -307,6 +376,22 @@ function openCart(returnFocus = cartToggle) {
   cartDialog.querySelector('.cart-close').focus({preventScroll:true});
 }
 cartToggle.addEventListener('click', () => openCart());
+document.querySelectorAll('[data-add-dish]').forEach(button => {
+  let feedbackTimer;
+  button.addEventListener('click', () => {
+    const id = button.dataset.addDish;
+    if (!dishes.has(id)) return;
+    readSavedCart();
+    const quantity = cart.get(id) || 0;
+    if (quantity >= 99) { showMenuFeedback('В корзине уже 99 порций этого блюда'); return; }
+    cart.set(id, quantity + 1);
+    updateCart();
+    showMenuFeedback(dishes.get(id).name + ' — в корзине');
+    clearTimeout(feedbackTimer);
+    button.classList.add('is-added');
+    feedbackTimer = setTimeout(() => button.classList.remove('is-added'), 750);
+  });
+});
 document.getElementById('dialog-action').addEventListener('click', event => {
   const id = event.currentTarget.dataset.dish;
   if (!dishes.has(id)) return;
