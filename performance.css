@@ -1,0 +1,12 @@
+/* Keep the visual texture, without live SVG turbulence or full-screen blur. */
+.paper:before,.hero-grain:before,.about-section:before,.dialog-shell:after{background-size:180px 180px}
+.dish-dialog::backdrop,.cart-dialog::backdrop{backdrop-filter:none}
+@media(min-width:801px){.site-header{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}}
+@media(hover:none),(pointer:coarse){
+ .hero-woman,.hero-food{will-change:auto;transform:none!important}
+ .mobile-actions{backdrop-filter:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .hero-woman,.hero-food{will-change:auto}
+ .site-header{backdrop-filter:none;-webkit-backdrop-filter:none}
+}

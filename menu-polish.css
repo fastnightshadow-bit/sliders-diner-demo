@@ -1,0 +1,36 @@
+/* Quiet photo backgrounds keep the attention on the real food. */
+.food-photo{object-fit:contain}
+.category-icon{display:block;width:40px;height:40px;object-fit:contain;flex-shrink:0}
+@media(max-width:1100px){.category-icon{width:33px;height:33px}}
+@media(max-width:600px){.category-icon{width:30px;height:30px}}
+@media(min-width:801px){
+  .filters{gap:8px;padding:17px 0 20px}
+  .filters button{padding:12px 10px;gap:9px;min-height:80px;border:1px solid transparent;border-radius:14px;transition:background .2s,border-color .2s}
+  .filters button+button:before,.filters button[aria-pressed=true]:after{display:none}
+  .filters button>span{flex:1;min-width:0;max-width:none;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:8px;font-size:16px;line-height:1.18}
+  .filters button small{display:grid;place-items:center;width:27px;height:27px;margin:0;border:1px solid #a7191445;border-radius:50%;background:#f7e6cb;color:var(--red);opacity:1;font-size:14px;font-weight:750;line-height:1;font-variant-numeric:tabular-nums;vertical-align:baseline;transition:color .2s,background .2s}
+  .filters .category-icon{width:42px;height:42px}
+  .filters button[aria-pressed=true]{background:#eedabd;border-color:#a7191455;border-radius:14px}
+  .filters button[aria-pressed=true] small{background:var(--red);border-color:var(--red);color:var(--cream)}
+  .filters button:hover{background:#f0dec1;border-color:#a7191440;border-radius:14px}
+  .menu-grid{gap:25px 22px}
+  .food-open{background:#fff0d6;border:1px solid #9c3b2129;border-radius:20px;box-shadow:0 3px 0 #78211408}
+  .food-stage{height:230px;padding:18px 12px 14px;background:radial-gradient(ellipse at 50% 80%,#b92319,#8f130d 74%);align-items:center}
+  .food-stage:before{display:none}
+  .food-stage>.food-cutout{filter:drop-shadow(0 9px 6px #4d0a0a45)}
+  .food-stage>.food-photo{width:100%;height:100%;max-height:100%;object-fit:contain}
+  .food-card[data-dish=bbq] .food-stage{padding:14px 21px 11px}
+  .food-card[data-dish=bacon] .food-stage,.food-card[data-dish=retro] .food-stage{padding-inline:5px}
+  .cart-item-art .food-photo{height:100%;width:100%;object-fit:contain}
+  .food-info{padding:17px 16px 19px;min-height:108px;align-items:flex-start;gap:12px;border-top:1px solid #9c3b2120}
+  .food-info h3{font-size:22px;line-height:1.1;font-weight:600}
+  .food-info div>span{font-size:9px;font-weight:600;letter-spacing:.15px;line-height:1.5;margin-top:7px}
+  .food-info strong{font-size:27px;padding-top:2px}
+  .card-arrow{opacity:1;transform:none;right:12px;top:12px;width:27px;height:27px;background:#f6e5c5ed;color:var(--red)}
+  .food-open:hover{transform:translateY(-4px);box-shadow:0 12px 25px #75241213}
+  .food-open:hover .food-cutout{transform:translateY(-2px) scale(1.025)}
+  .dialog-copy #dialog-description{max-width:calc(100% - 145px)}
+}
+@media(min-width:801px) and (max-width:1100px){.food-stage{height:205px}.food-info{padding:15px 11px;gap:8px}.food-info h3{font-size:19px}.food-info strong{font-size:24px}.food-info div>span{font-size:8px}}
+@media(min-width:801px) and (max-width:950px){.menu-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:801px) and (max-width:1100px){.filters{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 14px}.filters button{min-height:68px;padding:10px 15px}.filters button>span{font-size:17px}}

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+ <defs><path id="top" d="M61 160a99 99 0 0 1 198 0"/><path id="bottom" d="M52 162a108 108 0 0 0 216 0"/></defs>
+ <g stroke="#8f241c"><circle cx="160" cy="160" r="143" stroke-width="5"/><circle cx="160" cy="160" r="133" stroke-width="1.7"/><circle cx="160" cy="160" r="125" stroke-width="2" stroke-dasharray="3 5"/></g>
+ <g fill="#8f241c" font-family="Arial,sans-serif" text-anchor="middle" font-weight="700"><text font-size="23" letter-spacing="4"><textPath href="#top" startOffset="50%">SLIDERS</textPath></text><text font-size="14" letter-spacing="3"><textPath href="#bottom" startOffset="50%">ВМЕСТЕ ВКУСНЕЕ</textPath></text><text x="160" y="193" font-size="108" font-weight="900">2</text><text x="160" y="224" font-size="21" letter-spacing="2">СЛАЙДЕРА</text><path d="m54 153 4 8 9 1-7 6 2 9-8-4-8 4 2-9-7-6 9-1zm212 0 4 8 9 1-7 6 2 9-8-4-8 4 2-9-7-6 9-1z"/></g>
+ <g stroke="#f9efdc" stroke-width="2.3" opacity=".75"><path d="m48 69 10 5m213 42 12-3M28 198l9-5m166 107 2-8M107 32l7 7m94 56-5 4M125 165l11 1m30-31 7-3m-9 60 9-2M204 219l7 1"/></g>
+</svg>
