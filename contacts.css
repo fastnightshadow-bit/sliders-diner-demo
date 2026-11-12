@@ -28,11 +28,9 @@
   .contact-hours{display:grid;grid-template-columns:1fr auto;gap:2px 12px}
   .contact-hours span{font-weight:500}.contact-hours b{font-weight:650}
   .contact-route{margin-top:22px;display:flex;width:100%;padding:17px 13px;gap:10px;white-space:nowrap;font-size:21px}
-  .contact-route svg{width:23px;height:23px;flex-shrink:0}
   .contact-vk{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:53px;margin:13px 0 0;padding:10px 19px;border:1px solid #a7191470;border-radius:999px;background:#fff0d4;color:var(--red);font-family:var(--title);font-size:19px;font-weight:600;line-height:1.2;transition:background .2s,border-color .2s,transform .2s}
   .contact-vk img{width:28px;height:28px;flex-shrink:0}
   .contact-vk .vk-label{flex:1}
-  .contact-vk .vk-arrow{width:19px;height:19px;flex-shrink:0}
   .contact-vk:hover{background:#f2d9b1;border-color:var(--red);transform:translateY(-2px)}
   .contact-vk:focus-visible{outline:2px solid var(--red);outline-offset:4px}
   .contact-location{grid-column:3;grid-row:2;align-self:start;position:relative;z-index:3;margin-top:3px;min-width:0;transform:rotate(-2deg)}
@@ -52,7 +50,7 @@
   .contact-portrait{width:40%;left:-75px;top:35px}
   .entrance-polaroid{left:3%;width:190px;bottom:46px;padding:9px}.entrance-polaroid img{height:190px}.entrance-polaroid span{font-size:22px}
   .contact-info{padding-right:14px;padding-left:45px}.contact-info dt{font-size:22px}.contact-info dd{font-size:12px}.contact-info dt svg{left:-32px;width:24px}
-  .contact-route{font-size:18px;padding-inline:10px;gap:7px}.contact-route svg{width:20px}
+  .contact-route{font-size:18px;padding-inline:10px;gap:7px}
   .contact-map iframe{height:335px}.contact-map-caption{padding:11px 8px;flex-wrap:wrap;gap:4px}.contact-car{right:0;width:42%;bottom:27px}
   main+footer{margin-top:-20px}
 }

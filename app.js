@@ -184,7 +184,6 @@ dialog.addEventListener('close', () => {
 // Motion follows the visitor, without perpetual movement while reading.
 const hero = document.querySelector('.poster-hero');
 const layers = [...document.querySelectorAll('.parallax-layer')];
-const mobileActions = document.querySelector('.mobile-actions');
 const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 let motionFrame = 0, mouseX = 0, mouseY = 0, currentX = 0, currentY = 0, lastMotionTime = 0;
 let heroBounds = hero?.getBoundingClientRect();
@@ -214,7 +213,6 @@ function paintMotion(time) {
 function requestMotion() { if (hero && !motionFrame && !document.hidden) motionFrame = requestAnimationFrame(paintMotion); }
 function motionScroll() {
   if (!hero) return;
-  if (mobileActions) mobileActions.hidden = window.scrollY < heroBounds.height * .7;
   // Do no animation work once the hero has left the screen.
   if (window.scrollY < heroBounds.height) requestMotion();
   else if (motionFrame) { cancelAnimationFrame(motionFrame); motionFrame = 0; lastMotionTime = 0; }

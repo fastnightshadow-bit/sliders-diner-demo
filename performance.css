@@ -4,7 +4,6 @@
 @media(min-width:801px){.site-header{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}}
 @media(hover:none),(pointer:coarse){
  .hero-woman,.hero-food{will-change:auto;transform:none!important}
- .mobile-actions{backdrop-filter:none}
 }
 @media(prefers-reduced-motion:reduce){
  .hero-woman,.hero-food{will-change:auto}
