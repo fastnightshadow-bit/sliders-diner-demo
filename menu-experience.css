@@ -15,11 +15,11 @@
 .menu-section .filters{display:flex;flex-direction:column;gap:4px;margin:0;padding:11px;border:1px solid #a7191470;border-radius:22px;background:#f6e5c533;overflow:visible;scrollbar-width:none}
 .menu-section .filters button{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:13px;width:100%;min-height:59px;padding:10px 11px;border:0;border-radius:13px;background:transparent;color:var(--red);text-align:left;transition:background .2s,color .2s}
 .menu-section .filters button:before,.menu-section .filters button:after{display:none}
-.menu-section .filters .category-icon{width:34px;height:34px;flex-shrink:0}
+.menu-section .filters .category-icon{width:34px;height:34px;flex-shrink:0;color:inherit}
 .menu-section .filters button>span{display:block;max-width:none;font:500 20px/1.18 var(--title);letter-spacing:0;text-transform:none;white-space:normal}
 .menu-section .filters [data-count]{display:none!important}
 .menu-section .filters button[aria-pressed=true]{background:linear-gradient(#a71914,#8f1510);color:var(--cream);border-radius:13px;box-shadow:inset 0 0 0 1px #75130e33}
-.menu-section .filters button[aria-pressed=true] .category-icon{filter:brightness(0) invert(.92) sepia(.3)}
+.menu-section .filters button[aria-pressed=true] .category-icon{--category-icon-base:#8f1510;--category-icon-highlight:#a71914}
 .menu-section .filters button:hover:not([aria-pressed=true]){background:#aa1d1010}
 .menu-car{display:block;position:relative;width:800px;max-width:none;height:auto;margin:25px 0 -28px -558px;pointer-events:none;filter:drop-shadow(0 7px 4px #5c241b20)}
 .menu-content{min-width:0}
@@ -131,13 +131,3 @@ button:focus-visible,a:focus-visible{outline:0;box-shadow:0 3px 0 currentColor}
 @media(hover:hover) and (pointer:fine){.menu-section .filters button:hover:not([aria-pressed=true]){background:#a7191410;box-shadow:inset 0 0 0 1px #a7191480,0 0 8px #a7191414}}
 .menu-section .filters button:focus-visible{box-shadow:inset 0 0 0 2px var(--red);text-decoration:underline;text-underline-offset:4px}
 @media(prefers-reduced-motion:reduce){.menu-section .filters button{transition:none}}
-
-/* Distribute the heading, diner badge and sticker across wide banners. */
-@media(min-width:1001px){
- .menu-banner{justify-content:space-between;gap:40px}
- .menu-banner h2{flex-shrink:0;order:0}
- .menu-sign{position:static;order:1;flex:0 0 220px;width:220px;height:154px}
- .menu-portrait{position:static;order:2;flex:0 0 230px;width:230px;height:auto;margin-right:10px}
- .menu-spark{position:absolute;left:37%;top:50%;margin:0;transform:translateY(-50%);font-size:35px}
-}
-@media(min-width:1001px) and (max-width:1250px){.menu-banner{gap:30px}.menu-sign{flex-basis:190px;width:190px;height:133px}.menu-portrait{flex-basis:210px;width:210px;margin-right:0}.menu-spark{display:none}}
