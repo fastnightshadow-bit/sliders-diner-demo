@@ -438,7 +438,7 @@ document.querySelectorAll('[data-add-dish]').forEach(button => {
     showMenuFeedback(dishes.get(id).name + ' — в корзине');
     clearTimeout(feedbackTimer);
     button.classList.add('is-added');
-    feedbackTimer = setTimeout(() => button.classList.remove('is-added'), 750);
+    feedbackTimer = setTimeout(() => button.classList.remove('is-added'), 1100);
   });
 });
 document.getElementById('dialog-action').addEventListener('click', event => {
