@@ -100,3 +100,17 @@
 @media(min-width:481px) and (max-width:700px){.menu-sign{top:25px;width:118px;height:83px}}
 @media(max-width:480px){.menu-banner{min-height:180px}.menu-banner h2{width:190px;margin-bottom:12px}.menu-portrait{height:151px}.menu-sign{left:12px;right:auto;top:-13px;width:120px;height:84px;border:0;border-radius:0;transform:none;background:none}.menu-section .food-info{min-height:100px}}
 @media(max-width:359px){.menu-banner h2{width:155px}.menu-sign{left:9px;top:-6px;width:108px;height:76px}}
+
+/* Clean controls: selection is a fill, keyboard focus is an underline. */
+.menu-section .filters,.menu-section .filters button,.menu-tags button,.menu-search,.menu-section .food-card,.quick-add,.menu-empty,.menu-empty button,.menu-toast{border:0}
+.menu-section .filters button[aria-pressed=true],.quick-add{box-shadow:none}
+.menu-tags button{background:#fff3dc66}.menu-tags button[aria-pressed=true]{background:var(--red)}
+.menu-search{background:#fff3de;transition:background .2s}
+.menu-search:focus-within{outline:0;background:#fff9e9}
+.menu-search:has(input:focus-visible){box-shadow:none}
+.menu-search:focus-within svg{color:#68110b}
+.menu-search input:focus-visible{outline:0}
+.site-header .cart-toggle,.site-header .phone-circle,.site-header .location-pill,.hero-button,.red-button{border:0;outline:0}
+button:focus-visible,a:focus-visible{outline:0;box-shadow:0 3px 0 currentColor}
+.menu-section .menu-grid{align-content:start}
+.menu-sign img{object-fit:contain}

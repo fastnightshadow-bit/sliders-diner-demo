@@ -56,18 +56,19 @@ function updateFavoriteButtons() {
     button.setAttribute('aria-label', `${active ? 'Убрать из избранного' : 'В избранное'}: ${dishes.get(button.dataset.favorite).name}`);
   });
 }
-function applyMenuFilters() {
+function matchesMenuFilters(card) {
   const terms = normalizeQuery(searchInput?.value || '').split(/\s+/).filter(Boolean);
-  cards.forEach(card => {
-    const dish = dishes.get(card.dataset.dish);
-    const haystack = normalizeQuery([dish.name, dish.label, ...dish.ingredients].join(' '));
-    const matchesTag = selectedTag === 'all'
-      || (selectedTag === 'classic' && classicDishes.has(dish.id))
-      || (selectedTag === 'bacon' && dish.ingredients.some(ingredient => /бекон/i.test(ingredient)))
-      || (selectedTag === 'favorite' && favorites.has(dish.id));
-    card.hidden = (selectedCategory !== 'all' && card.dataset.category !== selectedCategory)
-      || !matchesTag || !terms.every(term => haystack.includes(term));
-  });
+  const dish = dishes.get(card.dataset.dish);
+  const haystack = normalizeQuery([dish.name, dish.label, ...dish.ingredients].join(' '));
+  const matchesTag = selectedTag === 'all'
+    || (selectedTag === 'classic' && classicDishes.has(dish.id))
+    || (selectedTag === 'bacon' && dish.ingredients.some(ingredient => /бекон/i.test(ingredient)))
+    || (selectedTag === 'favorite' && favorites.has(dish.id));
+  return (selectedCategory === 'all' || card.dataset.category === selectedCategory)
+    && matchesTag && terms.every(term => haystack.includes(term));
+}
+function renderMenuFilters() {
+  cards.forEach(card => { card.hidden = !matchesMenuFilters(card); });
   const shown = cards.filter(card => !card.hidden).length;
   if (menuCount) menuCount.textContent = countLabel(shown) + ' в меню';
   document.querySelectorAll('[data-menu-section]').forEach(section => {
@@ -85,6 +86,54 @@ function applyMenuFilters() {
   const results = document.getElementById('menu-results');
   if (results) results.textContent = `Показано: ${countLabel(shown)}`;
 }
+const menuContent = document.querySelector('.menu-content');
+const filterAnimations = new Set();
+let filterRevision = 0;
+function animateFilterElement(element, frames, duration, delay = 0) {
+  const animation = element.animate(frames, {duration, delay, easing:'cubic-bezier(.22,.7,.2,1)', fill:'both'});
+  filterAnimations.add(animation);
+  const done = animation.finished.catch(() => {});
+  done.then(() => { filterAnimations.delete(animation); animation.cancel(); });
+  return done;
+}
+function applyMenuFilters(animate = false) {
+  const revision = ++filterRevision;
+  filterAnimations.forEach(animation => animation.cancel());
+  filterAnimations.clear();
+  menuContent?.setAttribute('aria-busy', 'false');
+  if (animate !== true || reducedMotion.matches || !menuContent?.animate) {
+    renderMenuFilters();
+    return;
+  }
+  const visible = cards.filter(card => !card.hidden);
+  const positions = new Map(visible.map(card => [card, card.getBoundingClientRect()]));
+  const oldHeight = menuContent.getBoundingClientRect().height;
+  const leaving = visible.filter(card => !matchesMenuFilters(card));
+  menuContent.setAttribute('aria-busy', 'true');
+  const update = () => {
+    if (revision !== filterRevision) return;
+    renderMenuFilters();
+    const newHeight = menuContent.getBoundingClientRect().height;
+    if (Math.abs(newHeight - oldHeight) > 1) animateFilterElement(menuContent, [{height:oldHeight + 'px'}, {height:newHeight + 'px'}], 280);
+    cards.filter(card => !card.hidden).forEach((card, index) => {
+      const before = positions.get(card);
+      const after = card.getBoundingClientRect();
+      const first = before
+        ? {opacity:1, transform:`translate(${before.left-after.left}px,${before.top-after.top}px)`}
+        : {opacity:0, transform:'translateY(12px) scale(.98)'};
+      animateFilterElement(card, [first, {opacity:1, transform:'translate(0,0) scale(1)'}], 260, before ? 0 : Math.min(index * 18, 90));
+    });
+    const empty = document.getElementById('menu-empty');
+    if (empty && !empty.hidden) animateFilterElement(empty, [{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}], 220);
+    Promise.all([...filterAnimations].map(animation => animation.finished.catch(() => {}))).then(() => {
+      if (revision === filterRevision) menuContent.setAttribute('aria-busy', 'false');
+    });
+  };
+  if (leaving.length) {
+    Promise.all(leaving.map(card => animateFilterElement(card, [{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-5px)'}],110))).then(update);
+  } else update();
+}
+reducedMotion.addEventListener('change', () => applyMenuFilters());
 filters.querySelectorAll('[data-filter]').forEach(button => {
   const category = button.dataset.filter;
   const count = cards.filter(card => category === 'all' || card.dataset.category === category).length;
@@ -95,17 +144,17 @@ filters.querySelectorAll('[data-filter]').forEach(button => {
 filters.hidden = false;
 filters.addEventListener('click', event => {
   const button = event.target.closest('button[data-filter]');
-  if (!button) return;
+  if (!button || button.dataset.filter === selectedCategory) return;
   selectedCategory = button.dataset.filter;
   filters.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-  applyMenuFilters();
+  applyMenuFilters(true);
 });
 menuTags?.addEventListener('click', event => {
   const button = event.target.closest('[data-menu-tag]');
-  if (!button) return;
+  if (!button || button.dataset.menuTag === selectedTag) return;
   selectedTag = button.dataset.menuTag;
   menuTags.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-  applyMenuFilters();
+  applyMenuFilters(true);
 });
 favoriteButtons.forEach(button => button.addEventListener('click', () => {
   readFavorites();
