@@ -1,0 +1,21 @@
+.ingredient-box .ingredient-help{font:500 11px/1.5 var(--body);color:#76503a;margin:5px 0 9px}
+.ingredient-box #dialog-ingredients{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px;padding:0}
+.ingredient-box li{display:block;min-width:0}.ingredient-box li:before{display:none}
+.ingredient-box label{display:flex;align-items:center;gap:9px;min-height:38px;padding:5px 0;cursor:pointer;font:500 12px/1.4 var(--body);color:#442619}
+.ingredient-box input{appearance:none;-webkit-appearance:none;display:grid;place-items:center;flex:0 0 20px;width:20px;height:20px;margin:0;border:1.5px solid #a71914;border-radius:4px;background:transparent;cursor:pointer;transition:background .15s}
+.ingredient-box input:checked{background:#a71914}
+.ingredient-box input:checked:after{content:'';width:6px;height:11px;border:solid #fff0d5;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+.ingredient-box input:focus-visible{outline:2px solid #a71914;outline-offset:3px}
+.ingredient-box input:not(:checked)+span{color:#92644c;text-decoration:line-through;text-decoration-thickness:1px}
+.ingredient-summary{font:500 11px/1.5 var(--body);color:#85543c;margin:9px 0 0}
+.ingredient-summary.is-invalid{color:#a71914;font-weight:700}
+#dialog-action:disabled{opacity:.5;box-shadow:none;transform:none}
+.cart-dialog .cart-item-info>.cart-item-options{display:block;-webkit-line-clamp:unset;overflow:visible;color:#9e2017;font-weight:600;overflow-wrap:anywhere}
+@media(max-width:1000px){
+  .ingredient-box label{min-height:44px;font-size:12px}
+  .ingredient-box .ingredient-help,.ingredient-summary{font-size:11px}
+  .cart-dialog .cart-item.is-customized{grid-template-rows:auto auto 33px}
+  .cart-dialog .cart-item-info>.cart-item-options{display:block;-webkit-line-clamp:unset;overflow:visible;padding-right:0;font-size:10px;line-height:1.5}
+}
+@media(max-width:359px){.ingredient-box #dialog-ingredients{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.ingredient-box input{transition:none}}

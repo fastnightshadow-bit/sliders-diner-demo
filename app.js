@@ -317,14 +317,11 @@ document.querySelectorAll('[data-open-dish]').forEach(button => {
     dialog.classList.toggle('is-long-title', dish.name.length > 23);
     document.getElementById('dialog-category').textContent = dish.label;
     document.getElementById('dialog-price').textContent = dish.price + ' ₽';
-    document.getElementById('dialog-description').textContent = dish.description;
     document.getElementById('dialog-food').replaceChildren(createFoodCutout(dish));
     dialog.classList.toggle('has-source-photo', Boolean(dish.pageImage));
     dialog.classList.toggle('has-menu-illustration', !dish.image && !dish.cutout && !dish.pageImage);
-    dialog.querySelector('.ingredient-box').hidden = dish.ingredients.length === 0;
-    document.getElementById('dialog-ingredients').replaceChildren(...dish.ingredients.map(text => {
-      const li = document.createElement('li'); li.textContent = text; return li;
-    }));
+    window.SlidersDishOptions.render(dish);
+    dialog.setAttribute('aria-describedby', dish.ingredients.length ? 'ingredient-help' : 'dialog-description');
     window.SlidersMobileDialogs?.prepare(dialog);
     dialog.showModal();
     document.body.classList.add('dialog-open');
@@ -415,18 +412,18 @@ const cartToggle = document.querySelector('.cart-toggle');
 const cartItems = document.getElementById('cart-items');
 const compactCart = window.matchMedia('(max-width: 1000px)');
 const cart = new Map();
-const cartStorageKey = 'sliders-demo-cart-v1';
+const cartOptions = window.SlidersCartOptions;
+const cartStorageKey = 'sliders-demo-cart-v2';
 let cartStorageAvailable = true;
 let cartReturnFocus = cartToggle;
 function readSavedCart() {
   if (!cartStorageAvailable) return;
   try {
-    const saved = JSON.parse(localStorage.getItem(cartStorageKey) || '[]');
+    const current = localStorage.getItem(cartStorageKey);
+    const saved = JSON.parse(current === null ? localStorage.getItem('sliders-demo-cart-v1') || '[]' : current);
     if (!Array.isArray(saved)) return;
     cart.clear();
-    saved.forEach(entry => {
-      if (Array.isArray(entry) && dishes.has(entry[0]) && Number.isInteger(entry[1]) && entry[1] > 0 && entry[1] <= 99) cart.set(entry[0], entry[1]);
-    });
+    cartOptions.readEntries(saved, dishes).forEach((quantity, key) => cart.set(key, quantity));
   } catch { cartStorageAvailable = false; }
 }
 readSavedCart();
@@ -434,7 +431,12 @@ const rubles = value => new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
 function updateRecommendations() {
   const section = document.getElementById('cart-smart');
   const list = document.getElementById('cart-recommendations');
-  const recommendation = window.SlidersRecommendations?.choose(cart, dishes) || {items:[], caption:''};
+  const baseCart = new Map();
+  cart.forEach((quantity, key) => {
+    const line = cartOptions.resolve(key, dishes);
+    if (line) baseCart.set(line.dish.id, (baseCart.get(line.dish.id) || 0) + quantity);
+  });
+  const recommendation = window.SlidersRecommendations?.choose(baseCart, dishes) || {items:[], caption:''};
   section.hidden = !recommendation.items.length;
   document.getElementById('cart-smart-caption').textContent = recommendation.caption;
   const suggestions = recommendation.items.map(dish => {
@@ -456,26 +458,33 @@ function updateCart(persist = true) {
   const focusedAction = active?.dataset.cartAction;
   const focusedId = active?.dataset.id;
   const focusedRecommendation = active?.dataset.cartRecommend;
-  let count = 0, total = 0;
+  let count = 0, total = 0, hasChanges = false;
   const rows = [];
   cart.forEach((quantity, id) => {
-    const dish = dishes.get(id);
+    const line = cartOptions.resolve(id, dishes);
+    if (!line) return;
+    const {dish, excluded} = line;
+    const changed = excluded.length > 0;
+    hasChanges ||= changed;
+    const label = dish.name + (changed ? ' — убрать: ' + excluded.join(', ') : '');
     count += quantity; total += dish.price * quantity;
     const row = document.createElement('article');
-    row.className = 'cart-item';
+    row.className = 'cart-item' + (changed ? ' is-customized' : ''); row.dataset.dish = dish.id;
     const art = document.createElement('div'); art.className = 'cart-item-art';
-    art.append(createFoodCutout(dish, 'cart-food-' + id));
+    art.append(createFoodCutout(dish, 'cart-food-' + rows.length + '-' + dish.id));
     const info = document.createElement('div'); info.className = 'cart-item-info';
     const title = document.createElement('h3'); title.textContent = dish.name;
-    const unit = document.createElement('p'); unit.textContent = dish.description || rubles(dish.price) + ' за порцию';
+    const unit = document.createElement('p');
+    unit.textContent = changed ? 'Убрать: ' + excluded.join(', ') : dish.description || rubles(dish.price) + ' за порцию';
+    if (changed) unit.className = 'cart-item-options';
     const controls = document.createElement('div'); controls.className = 'cart-quantity';
-    for (const [action, label, symbol] of [['less','Уменьшить','−'],['quantity','',''],['more','Увеличить','+']]) {
+    for (const [action, verb, symbol] of [['less','Уменьшить','−'],['quantity','',''],['more','Увеличить','+']]) {
       const element = document.createElement(action === 'quantity' ? 'span' : 'button');
       if (action === 'quantity') element.textContent = quantity;
-      else { element.type = 'button'; element.textContent = symbol; element.dataset.cartAction = action; element.dataset.id = id; element.setAttribute('aria-label', label + ' количество: ' + dish.name); if (action === 'more') element.disabled = quantity >= 99; }
+      else { element.type = 'button'; element.textContent = symbol; element.dataset.cartAction = action; element.dataset.id = id; element.setAttribute('aria-label', verb + ' количество: ' + label); if (action === 'more') element.disabled = quantity >= 99; }
       controls.append(element);
     }
-    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'cart-remove'; remove.dataset.cartAction = 'remove'; remove.dataset.id = id; remove.setAttribute('aria-label', 'Убрать: ' + dish.name);
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'cart-remove'; remove.dataset.cartAction = 'remove'; remove.dataset.id = id; remove.setAttribute('aria-label', 'Убрать: ' + label);
     remove.innerHTML = '<svg viewBox="0 0 24 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V3h8v3M5 6l1 17h12l1-17M10 10v9m4-9v9"/></svg>';
     const sum = document.createElement('strong'); sum.className = 'cart-item-sum'; sum.textContent = rubles(dish.price * quantity);
     info.append(title, unit); row.append(art, info, controls, sum, remove);
@@ -501,7 +510,7 @@ function updateCart(persist = true) {
   if (compactCart.matches) call.textContent = 'Оформить заказ';
   else call.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M7 3 4 4C1 8 7 19 16 21l4-3-3-5-3 2c-3-1-5-3-5-6l2-2-4-4Z"/></svg><span>Позвонить и заказать</span>';
   call.setAttribute('aria-label', compactCart.matches ? 'Оформить заказ по телефону' : 'Позвонить и заказать');
-  document.querySelector('.cart-hint').textContent = compactCart.matches ? 'Заказ подтверждаем по телефону' : 'Заказ и наличие блюд уточним по телефону';
+  document.querySelector('.cart-hint').textContent = hasChanges ? 'Изменения состава и заказ подтвердим по телефону' : compactCart.matches ? 'Заказ подтверждаем по телефону' : 'Заказ и наличие блюд уточним по телефону';
   const hint = document.querySelector('.cart-hint');
   document.querySelector('.cart-footer').prepend(hint);
   document.querySelector('.cart-total span').textContent = 'Итого:';
@@ -547,8 +556,12 @@ document.querySelectorAll('[data-add-dish]').forEach(button => {
 document.getElementById('dialog-action').addEventListener('click', event => {
   const id = event.currentTarget.dataset.dish;
   if (!dishes.has(id)) return;
+  const key = cartOptions.keyFor(dishes.get(id), window.SlidersDishOptions.excluded());
+  if (key === null) return;
   readSavedCart();
-  cart.set(id, Math.min(99, (cart.get(id) || 0) + 1)); updateCart(); openCart(lastDishButton);
+  const quantity = cart.get(key) || 0;
+  if (quantity >= 99) { showMenuFeedback('В корзине уже 99 порций этого варианта'); return; }
+  cart.set(key, quantity + 1); updateCart(); openCart(lastDishButton);
 });
 cartItems.addEventListener('click', event => {
   const button = event.target.closest('[data-cart-action]'); if (!button) return;
