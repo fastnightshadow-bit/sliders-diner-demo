@@ -27,6 +27,13 @@
       const input = document.createElement('input'), mark = document.createElement('span'), text = document.createElement('span');
       input.type = 'checkbox'; input.checked = true; input.value = name;
       mark.className = 'ingredient-checkmark'; mark.setAttribute('aria-hidden', 'true');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 32 32'); svg.setAttribute('focusable', 'false');
+      ['M3.5 18.5Q6.2 21.2 10.1 24.2Q17.1 14.9 28.5 5.2', 'M5.2 18.8L10.2 22.8 27.7 5.1'].forEach(d => {
+        const stroke = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        stroke.setAttribute('d', d); stroke.setAttribute('pathLength', '100'); svg.append(stroke);
+      });
+      mark.append(svg);
       text.className = 'ingredient-name'; text.textContent = name;
       label.append(input, mark, text); row.append(label); return row;
     }));
