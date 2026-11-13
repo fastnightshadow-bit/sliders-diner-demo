@@ -201,7 +201,7 @@ function showMenuFeedback(message) {
 const svgNS = 'http://www.w3.org/2000/svg';
 function createFoodCutout(dish, maskId = 'dialog-food-mask') {
   const cartPhoto = {'fries-classic':'fries', 'coca-cola':'cola'}[dish.id];
-  if (cartPhoto && !window.matchMedia('(max-width: 1000px)').matches && (maskId.startsWith('cart-food-') || maskId.startsWith('suggestion-'))) {
+  if (cartPhoto && (maskId.startsWith('cart-food-') || maskId.startsWith('suggestion-'))) {
     const image = document.createElement('img');
     image.src = 'assets/cart-' + cartPhoto + '-v26.webp';
     image.className = 'food-cutout food-photo'; image.alt = dish.name;
@@ -432,7 +432,6 @@ const rubles = value => new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
 function updateRecommendations() {
   const section = document.getElementById('cart-smart');
   const list = document.getElementById('cart-recommendations');
-  if (compactCart.matches) { section.hidden = true; list.replaceChildren(); return; }
   const recommendation = window.SlidersRecommendations?.choose(cart, dishes) || {items:[], caption:''};
   section.hidden = !recommendation.items.length;
   document.getElementById('cart-smart-caption').textContent = recommendation.caption;
@@ -466,7 +465,7 @@ function updateCart(persist = true) {
     art.append(createFoodCutout(dish, 'cart-food-' + id));
     const info = document.createElement('div'); info.className = 'cart-item-info';
     const title = document.createElement('h3'); title.textContent = dish.name;
-    const unit = document.createElement('p'); unit.textContent = compactCart.matches ? rubles(dish.price) + ' за порцию' : dish.description || rubles(dish.price) + ' за порцию';
+    const unit = document.createElement('p'); unit.textContent = dish.description || rubles(dish.price) + ' за порцию';
     const controls = document.createElement('div'); controls.className = 'cart-quantity';
     for (const [action, label, symbol] of [['less','Уменьшить','−'],['quantity','',''],['more','Увеличить','+']]) {
       const element = document.createElement(action === 'quantity' ? 'span' : 'button');
@@ -476,10 +475,8 @@ function updateCart(persist = true) {
     }
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'cart-remove'; remove.dataset.cartAction = 'remove'; remove.dataset.id = id; remove.setAttribute('aria-label', 'Убрать: ' + dish.name);
     remove.innerHTML = '<svg viewBox="0 0 24 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V3h8v3M5 6l1 17h12l1-17M10 10v9m4-9v9"/></svg>';
-    if (compactCart.matches) remove.textContent = 'Убрать';
     const sum = document.createElement('strong'); sum.className = 'cart-item-sum'; sum.textContent = rubles(dish.price * quantity);
-    if (compactCart.matches) { info.append(title, unit, controls, remove); row.append(art, info, sum); }
-    else { info.append(title, unit); row.append(art, info, controls, sum, remove); }
+    info.append(title, unit); row.append(art, info, controls, sum, remove);
     rows.push(row);
   });
   if (!rows.length) {
@@ -493,18 +490,19 @@ function updateCart(persist = true) {
   cartItems.replaceChildren(...rows);
   document.getElementById('cart-total').textContent = rubles(total);
   const badge = document.getElementById('cart-count'); badge.textContent = count; badge.hidden = count === 0;
+  window.SlidersMobile?.syncCart(count, total);
   cartToggle.setAttribute('aria-label', 'Открыть корзину, порций: ' + count);
   document.querySelector('.cart-call').hidden = count === 0;
   document.querySelector('.cart-hint').hidden = count === 0;
   cartDialog.setAttribute('aria-labelledby', compactCart.matches ? 'cart-mobile-title' : 'cart-title');
   const call = document.querySelector('.cart-call');
-  if (compactCart.matches) call.textContent = 'Позвонить в кафе';
+  if (compactCart.matches) call.textContent = 'Оформить заказ';
   else call.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M7 3 4 4C1 8 7 19 16 21l4-3-3-5-3 2c-3-1-5-3-5-6l2-2-4-4Z"/></svg><span>Позвонить и заказать</span>';
-  document.querySelector('.cart-hint').textContent = compactCart.matches ? 'Чтобы уточнить наличие и сделать заказ, позвони в Sliders' : 'Заказ и наличие блюд уточним по телефону';
+  call.setAttribute('aria-label', compactCart.matches ? 'Оформить заказ по телефону' : 'Позвонить и заказать');
+  document.querySelector('.cart-hint').textContent = compactCart.matches ? 'Заказ подтверждаем по телефону' : 'Заказ и наличие блюд уточним по телефону';
   const hint = document.querySelector('.cart-hint');
-  if (compactCart.matches) document.querySelector('.cart-call').before(hint);
-  else document.querySelector('.cart-footer').prepend(hint);
-  document.querySelector('.cart-total span').textContent = compactCart.matches ? 'Итого' : 'Итого:';
+  document.querySelector('.cart-footer').prepend(hint);
+  document.querySelector('.cart-total span').textContent = 'Итого:';
   updateRecommendations();
   if (focusedAction || focusedRecommendation) {
     const controls = [...cartItems.querySelectorAll('[data-cart-action]')];
@@ -525,6 +523,8 @@ function openCart(returnFocus = cartToggle) {
   cartDialog.querySelector('.cart-close').focus({preventScroll:true});
 }
 cartToggle.addEventListener('click', () => openCart());
+const mobileCartDock = document.getElementById('mobile-cart-dock');
+mobileCartDock?.addEventListener('click', () => openCart(mobileCartDock));
 document.querySelectorAll('[data-add-dish]').forEach(button => {
   let feedbackTimer;
   button.addEventListener('click', () => {
@@ -577,7 +577,8 @@ cartDialog.addEventListener('click', event => {
 });
 cartDialog.addEventListener('close', () => {
   if (!document.querySelector('dialog[open]')) document.body.classList.remove('dialog-open');
-  if (cartReturnFocus?.isConnected) cartReturnFocus.focus({preventScroll:true});
+  const returnTarget = cartReturnFocus?.isConnected && cartReturnFocus.getClientRects().length ? cartReturnFocus : cartToggle;
+  returnTarget.focus({preventScroll:true});
 });
 updateCart();
 compactCart.addEventListener('change', () => updateCart(false));
