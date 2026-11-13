@@ -110,14 +110,13 @@ function applyMenuFilters(animate = false) {
     }
     const visible = cards.filter(card => !card.hidden);
     const positions = new Map(visible.map(card => [card, card.getBoundingClientRect()]));
-    const oldHeight = menuContent.getBoundingClientRect().height;
     const leaving = visible.filter(card => !matchesMenuFilters(card));
     menuContent.setAttribute('aria-busy', 'true');
     const update = () => {
       if (revision !== filterRevision) return;
       renderMenuFilters();
-      const newHeight = menuContent.getBoundingClientRect().height;
-      if (Math.abs(newHeight - oldHeight) > 1) animateFilterElement(menuContent, [{height:oldHeight + 'px'}, {height:newHeight + 'px'}], 280);
+      // Keep the container in normal layout; animate cards only so hit testing
+      // stays aligned after filtering and closing a modal.
       cards.filter(card => !card.hidden).forEach((card, index) => {
         const before = positions.get(card);
         const after = card.getBoundingClientRect();
@@ -451,6 +450,11 @@ function updateRecommendations() {
   list.replaceChildren(...suggestions);
 }
 function updateCart(persist = true) {
+  // Storage updates and breakpoint changes also replace controls in the open dialog.
+  const active = cartDialog.open ? document.activeElement : null;
+  const focusedAction = active?.dataset.cartAction;
+  const focusedId = active?.dataset.id;
+  const focusedRecommendation = active?.dataset.cartRecommend;
   let count = 0, total = 0;
   const rows = [];
   cart.forEach((quantity, id) => {
@@ -493,13 +497,23 @@ function updateCart(persist = true) {
   document.querySelector('.cart-call').hidden = count === 0;
   document.querySelector('.cart-hint').hidden = count === 0;
   cartDialog.setAttribute('aria-labelledby', compactCart.matches ? 'cart-mobile-title' : 'cart-title');
-  document.querySelector('.cart-call').textContent = compactCart.matches ? 'Позвонить в кафе' : 'Заказать по телефону';
+  const call = document.querySelector('.cart-call');
+  if (compactCart.matches) call.textContent = 'Позвонить в кафе';
+  else call.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M7 3 4 4C1 8 7 19 16 21l4-3-3-5-3 2c-3-1-5-3-5-6l2-2-4-4Z"/></svg><span>Позвонить и заказать</span>';
   document.querySelector('.cart-hint').textContent = compactCart.matches ? 'Чтобы уточнить наличие и сделать заказ, позвони в Sliders' : 'Заказ и наличие блюд уточним по телефону';
   const hint = document.querySelector('.cart-hint');
   if (compactCart.matches) document.querySelector('.cart-call').before(hint);
   else document.querySelector('.cart-footer').prepend(hint);
   document.querySelector('.cart-total span').textContent = compactCart.matches ? 'Итого' : 'Итого:';
   updateRecommendations();
+  if (focusedAction || focusedRecommendation) {
+    const controls = [...cartItems.querySelectorAll('[data-cart-action]')];
+    const available = controls.filter(item => item.dataset.id === focusedId && !item.disabled);
+    const next = focusedAction
+      ? available.find(item => item.dataset.cartAction === focusedAction) || available[0]
+      : [...document.querySelectorAll('[data-cart-recommend]')].find(item => item.dataset.cartRecommend === focusedRecommendation);
+    (next || cartDialog.querySelector('.cart-close')).focus({preventScroll:true});
+  }
   document.getElementById('cart-status').textContent = 'В корзине порций: ' + count + '. Итого ' + rubles(total);
   if (persist && cartStorageAvailable) try { localStorage.setItem(cartStorageKey, JSON.stringify([...cart])); } catch { cartStorageAvailable = false; }
 }
