@@ -69,7 +69,7 @@
     dialog.addEventListener('touchend', () => { touchY = null; }, {passive:true});
     dialog.addEventListener('touchcancel', () => { touchY = null; }, {passive:true});
     dialog.addEventListener('close', () => {
-      if (dialog === cart) resetDrag();
+      if (dialog === cart) { resetDrag(); cart.classList.remove('cart-entered'); }
       if (!document.querySelector('dialog[open]')) restorePage();
     });
   }
@@ -99,6 +99,8 @@
   }
   handle?.addEventListener('pointerdown', event => {
     if (!compact.matches || !cart.open || event.button !== 0 || event.isPrimary === false) return;
+    // Keep the CSS entrance disabled until close, including snap-back/cancelled gestures.
+    cart.classList.add('cart-entered');
     resetDrag();
     suppressClick = false;
     drag = {id:event.pointerId,x:event.clientX,y:event.clientY,time:event.timeStamp,distance:0,moved:false};
