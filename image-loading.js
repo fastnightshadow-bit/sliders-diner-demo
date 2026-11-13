@@ -47,7 +47,7 @@
     const source = photos.get(id);
     if (!source) return Promise.resolve(null);
     let image = details.get(id);
-    if (!image) {
+    if (!image || (image.complete && image.naturalWidth === 0)) {
       image = new Image();
       image.decoding = 'async';
       image.fetchPriority = priority;
@@ -57,9 +57,9 @@
       image.src = source.src;
       details.set(id, image);
     }
-    image.fetchPriority = priority;
-    // Dialogs already show their cached preview, so a slow detail may finish
-    // whenever the network allows. Only category navigation needs a timeout.
+    if (image.fetchPriority !== 'high') image.fetchPriority = priority;
+    // Keep detail readiness alive on slow networks. Only category navigation
+    // needs a timeout; a pending dish can be cancelled without blocking the page.
     return prepareImage(image, 0);
   }
 
@@ -84,22 +84,55 @@
   window.SlidersImages = Object.freeze({
     prepare,
     isReady: ids => ids.every(id => !photos.has(id) || isDecoded(photos.get(id))),
+    isDetailReady: id => Boolean(details.get(id) && isDecoded(details.get(id))),
+    prepareForDialog: id => prepareDetail(id, 'high').then(image => Boolean(image && isDecoded(image))),
     create
   });
 
+  // Warm only nearby dishes, with two background transfers at a time.
+  // A deliberate click can promote its existing request to high priority.
+  const detailQueue = [];
+  const queuedDetails = new Set();
+  let warmingDetails = 0;
+  function warmNextDetail() {
+    while (warmingDetails < 2 && detailQueue.length) {
+      const id = detailQueue.shift();
+      warmingDetails++;
+      prepareDetail(id).finally(() => { warmingDetails--; warmNextDetail(); });
+    }
+  }
+  function queueDetail(id) {
+    if (!photos.has(id) || queuedDetails.has(id)) return;
+    queuedDetails.add(id);
+    detailQueue.push(id);
+    warmNextDetail();
+  }
+  function approachMenu() {
+    prepare();
+    queueDetail('bacon');
+  }
   const menu = document.getElementById('menu');
   if (menu && 'IntersectionObserver' in window) {
     const observer = new IntersectionObserver(entries => {
       if (entries.some(entry => entry.isIntersecting)) {
-        prepare();
+        approachMenu();
         observer.disconnect();
       }
     }, {rootMargin:'800px'});
     observer.observe(menu);
-  } else prepare();
+    const targets = new Map([...photos].map(([id, image]) => [image, id]));
+    const nearbyPhotos = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        queueDetail(targets.get(entry.target));
+        nearbyPhotos.unobserve(entry.target);
+      });
+    }, {rootMargin:'600px'});
+    photos.forEach(image => nearbyPhotos.observe(image));
+  } else approachMenu();
   document.querySelectorAll('a[href="#menu"]').forEach(link => {
-    link.addEventListener('pointerenter', () => prepare(), {once:true});
-    link.addEventListener('focusin', () => prepare(), {once:true});
+    link.addEventListener('pointerenter', approachMenu, {once:true});
+    link.addEventListener('focusin', approachMenu, {once:true});
   });
   document.querySelectorAll('[data-open-dish]').forEach(button => {
     let timer;

@@ -272,10 +272,35 @@ function createFoodCutout(dish, maskId = 'dialog-food-mask') {
 }
 const dialog = document.getElementById('dish-dialog');
 let lastDishButton = null;
+let pendingDishButton = null, dishRequest = 0;
+function cancelPendingDish() {
+  dishRequest++;
+  pendingDishButton?.removeAttribute('aria-busy');
+  pendingDishButton = null;
+}
+document.addEventListener('click', event => {
+  if (pendingDishButton && !pendingDishButton.contains(event.target)) cancelPendingDish();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && pendingDishButton) cancelPendingDish();
+});
 document.querySelectorAll('[data-open-dish]').forEach(button => {
-  button.addEventListener('click', () => {
+  button.addEventListener('click', async () => {
     const dish = dishes.get(button.dataset.openDish);
     if (!dish) return;
+    cancelPendingDish();
+    const request = dishRequest;
+    const images = window.SlidersImages;
+    if (images && !images.isDetailReady(dish.id)) {
+      pendingDishButton = button;
+      button.setAttribute('aria-busy', 'true');
+      showMenuFeedback('Готовим чёткое фото…');
+      const ready = await images.prepareForDialog(dish.id);
+      if (request !== dishRequest) return;
+      cancelPendingDish();
+      if (!ready) { showMenuFeedback('Фото пока не загрузилось. Попробуй ещё раз'); return; }
+      if (!button.isConnected || button.closest('.food-card')?.hidden) return;
+    }
     lastDishButton = button;
     document.getElementById('dialog-action').dataset.dish = dish.id;
     document.getElementById('dialog-title').textContent = dish.name;
