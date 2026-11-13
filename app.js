@@ -101,37 +101,46 @@ function applyMenuFilters(animate = false) {
   filterAnimations.forEach(animation => animation.cancel());
   filterAnimations.clear();
   menuContent?.setAttribute('aria-busy', 'false');
-  if (animate !== true || reducedMotion.matches || !menuContent?.animate) {
-    renderMenuFilters();
-    return;
-  }
-  const visible = cards.filter(card => !card.hidden);
-  const positions = new Map(visible.map(card => [card, card.getBoundingClientRect()]));
-  const oldHeight = menuContent.getBoundingClientRect().height;
-  const leaving = visible.filter(card => !matchesMenuFilters(card));
-  menuContent.setAttribute('aria-busy', 'true');
-  const update = () => {
+  const startTransition = () => {
     if (revision !== filterRevision) return;
-    renderMenuFilters();
-    const newHeight = menuContent.getBoundingClientRect().height;
-    if (Math.abs(newHeight - oldHeight) > 1) animateFilterElement(menuContent, [{height:oldHeight + 'px'}, {height:newHeight + 'px'}], 280);
-    cards.filter(card => !card.hidden).forEach((card, index) => {
-      const before = positions.get(card);
-      const after = card.getBoundingClientRect();
-      const first = before
-        ? {opacity:1, transform:`translate(${before.left-after.left}px,${before.top-after.top}px)`}
-        : {opacity:0, transform:'translateY(12px) scale(.98)'};
-      animateFilterElement(card, [first, {opacity:1, transform:'translate(0,0) scale(1)'}], 260, before ? 0 : Math.min(index * 18, 90));
-    });
-    const empty = document.getElementById('menu-empty');
-    if (empty && !empty.hidden) animateFilterElement(empty, [{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}], 220);
-    Promise.all([...filterAnimations].map(animation => animation.finished.catch(() => {}))).then(() => {
-      if (revision === filterRevision) menuContent.setAttribute('aria-busy', 'false');
-    });
+    menuContent?.setAttribute('aria-busy', 'false');
+    if (animate !== true || reducedMotion.matches || !menuContent?.animate) {
+      renderMenuFilters();
+      return;
+    }
+    const visible = cards.filter(card => !card.hidden);
+    const positions = new Map(visible.map(card => [card, card.getBoundingClientRect()]));
+    const oldHeight = menuContent.getBoundingClientRect().height;
+    const leaving = visible.filter(card => !matchesMenuFilters(card));
+    menuContent.setAttribute('aria-busy', 'true');
+    const update = () => {
+      if (revision !== filterRevision) return;
+      renderMenuFilters();
+      const newHeight = menuContent.getBoundingClientRect().height;
+      if (Math.abs(newHeight - oldHeight) > 1) animateFilterElement(menuContent, [{height:oldHeight + 'px'}, {height:newHeight + 'px'}], 280);
+      cards.filter(card => !card.hidden).forEach((card, index) => {
+        const before = positions.get(card);
+        const after = card.getBoundingClientRect();
+        const first = before
+          ? {opacity:1, transform:`translate(${before.left-after.left}px,${before.top-after.top}px)`}
+          : {opacity:0, transform:'translateY(12px) scale(.98)'};
+        animateFilterElement(card, [first, {opacity:1, transform:'translate(0,0) scale(1)'}], 260, before ? 0 : Math.min(index * 18, 90));
+      });
+      const empty = document.getElementById('menu-empty');
+      if (empty && !empty.hidden) animateFilterElement(empty, [{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}], 220);
+      Promise.all([...filterAnimations].map(animation => animation.finished.catch(() => {}))).then(() => {
+        if (revision === filterRevision) menuContent.setAttribute('aria-busy', 'false');
+      });
+    };
+    if (leaving.length) {
+      Promise.all(leaving.map(card => animateFilterElement(card, [{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-5px)'}],110))).then(update);
+    } else update();
   };
-  if (leaving.length) {
-    Promise.all(leaving.map(card => animateFilterElement(card, [{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-5px)'}],110))).then(update);
-  } else update();
+  const nextIds = cards.filter(matchesMenuFilters).map(card => card.dataset.dish);
+  if (window.SlidersImages && !window.SlidersImages.isReady(nextIds)) {
+    menuContent?.setAttribute('aria-busy', 'true');
+    window.SlidersImages.prepare(nextIds).then(startTransition);
+  } else startTransition();
 }
 reducedMotion.addEventListener('change', () => applyMenuFilters());
 filters.querySelectorAll('[data-filter]').forEach(button => {
@@ -192,6 +201,8 @@ function showMenuFeedback(message) {
 // SVG masks hide the poster background without repainting any food pixels.
 const svgNS = 'http://www.w3.org/2000/svg';
 function createFoodCutout(dish, maskId = 'dialog-food-mask') {
+  const cachedPhoto = window.SlidersImages?.create(dish, maskId === 'dialog-food-mask');
+  if (cachedPhoto) return cachedPhoto;
   if (dish.pageImage) {
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('viewBox', dish.view);
