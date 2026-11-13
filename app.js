@@ -201,6 +201,16 @@ function showMenuFeedback(message) {
 // SVG masks hide the poster background without repainting any food pixels.
 const svgNS = 'http://www.w3.org/2000/svg';
 function createFoodCutout(dish, maskId = 'dialog-food-mask') {
+  const cartPhoto = {'fries-classic':'fries', 'coca-cola':'cola'}[dish.id];
+  if (cartPhoto && !window.matchMedia('(max-width: 1000px)').matches && (maskId.startsWith('cart-food-') || maskId.startsWith('suggestion-'))) {
+    const image = document.createElement('img');
+    image.src = 'assets/cart-' + cartPhoto + '-v26.webp';
+    image.className = 'food-cutout food-photo'; image.alt = dish.name;
+    image.width = cartPhoto === 'fries' ? 320 : 240;
+    image.height = cartPhoto === 'fries' ? 213 : 360;
+    image.decoding = 'async';
+    return image;
+  }
   const cachedPhoto = window.SlidersImages?.create(dish, maskId === 'dialog-food-mask');
   if (cachedPhoto) return cachedPhoto;
   if (dish.pageImage) {
@@ -402,6 +412,7 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
 const cartDialog = document.getElementById('cart-dialog');
 const cartToggle = document.querySelector('.cart-toggle');
 const cartItems = document.getElementById('cart-items');
+const compactCart = window.matchMedia('(max-width: 1000px)');
 const cart = new Map();
 const cartStorageKey = 'sliders-demo-cart-v1';
 let cartStorageAvailable = true;
@@ -419,6 +430,26 @@ function readSavedCart() {
 }
 readSavedCart();
 const rubles = value => new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
+function updateRecommendations() {
+  const section = document.getElementById('cart-smart');
+  const list = document.getElementById('cart-recommendations');
+  if (compactCart.matches) { section.hidden = true; list.replaceChildren(); return; }
+  const recommendation = window.SlidersRecommendations?.choose(cart, dishes) || {items:[], caption:''};
+  section.hidden = !recommendation.items.length;
+  document.getElementById('cart-smart-caption').textContent = recommendation.caption;
+  const suggestions = recommendation.items.map(dish => {
+    const card = document.createElement('article'); card.className = 'cart-suggestion';
+    const art = document.createElement('div'); art.className = 'cart-suggestion-art';
+    art.append(createFoodCutout(dish, 'suggestion-' + dish.id));
+    const title = document.createElement('h4'); title.textContent = dish.name;
+    const price = document.createElement('strong'); price.textContent = rubles(dish.price);
+    const add = document.createElement('button'); add.type = 'button'; add.dataset.cartRecommend = dish.id;
+    add.setAttribute('aria-label', 'Добавить: ' + dish.name); add.textContent = 'Добавить';
+    const plus = document.createElement('span'); plus.textContent = '+'; plus.setAttribute('aria-hidden','true'); add.append(plus);
+    card.append(art, title, price, add); return card;
+  });
+  list.replaceChildren(...suggestions);
+}
 function updateCart(persist = true) {
   let count = 0, total = 0;
   const rows = [];
@@ -431,7 +462,7 @@ function updateCart(persist = true) {
     art.append(createFoodCutout(dish, 'cart-food-' + id));
     const info = document.createElement('div'); info.className = 'cart-item-info';
     const title = document.createElement('h3'); title.textContent = dish.name;
-    const unit = document.createElement('p'); unit.textContent = rubles(dish.price) + ' за порцию';
+    const unit = document.createElement('p'); unit.textContent = compactCart.matches ? rubles(dish.price) + ' за порцию' : dish.description || rubles(dish.price) + ' за порцию';
     const controls = document.createElement('div'); controls.className = 'cart-quantity';
     for (const [action, label, symbol] of [['less','Уменьшить','−'],['quantity','',''],['more','Увеличить','+']]) {
       const element = document.createElement(action === 'quantity' ? 'span' : 'button');
@@ -439,17 +470,36 @@ function updateCart(persist = true) {
       else { element.type = 'button'; element.textContent = symbol; element.dataset.cartAction = action; element.dataset.id = id; element.setAttribute('aria-label', label + ' количество: ' + dish.name); if (action === 'more') element.disabled = quantity >= 99; }
       controls.append(element);
     }
-    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'cart-remove'; remove.textContent = 'Убрать'; remove.dataset.cartAction = 'remove'; remove.dataset.id = id; remove.setAttribute('aria-label', 'Убрать: ' + dish.name);
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'cart-remove'; remove.dataset.cartAction = 'remove'; remove.dataset.id = id; remove.setAttribute('aria-label', 'Убрать: ' + dish.name);
+    remove.innerHTML = '<svg viewBox="0 0 24 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V3h8v3M5 6l1 17h12l1-17M10 10v9m4-9v9"/></svg>';
+    if (compactCart.matches) remove.textContent = 'Убрать';
     const sum = document.createElement('strong'); sum.className = 'cart-item-sum'; sum.textContent = rubles(dish.price * quantity);
-    info.append(title, unit, controls, remove); row.append(art, info, sum); rows.push(row);
+    if (compactCart.matches) { info.append(title, unit, controls, remove); row.append(art, info, sum); }
+    else { info.append(title, unit); row.append(art, info, controls, sum, remove); }
+    rows.push(row);
   });
-  if (!rows.length) { const empty = document.createElement('p'); empty.className = 'cart-empty'; empty.textContent = 'Пока пусто — самое время выбрать что-нибудь вкусное'; rows.push(empty); }
+  if (!rows.length) {
+    const empty = document.createElement(compactCart.matches ? 'p' : 'div'); empty.className = 'cart-empty';
+    const heading = document.createElement('strong'); heading.textContent = 'Начнём с чего-нибудь вкусного?';
+    const note = document.createElement('p'); note.textContent = 'Добавь любимые блюда из меню, а мы подскажем, что взять к ним.';
+    if (compactCart.matches) empty.textContent = 'Пока пусто — самое время выбрать что-нибудь вкусное';
+    else empty.append(heading, note);
+    rows.push(empty);
+  }
   cartItems.replaceChildren(...rows);
   document.getElementById('cart-total').textContent = rubles(total);
   const badge = document.getElementById('cart-count'); badge.textContent = count; badge.hidden = count === 0;
   cartToggle.setAttribute('aria-label', 'Открыть корзину, порций: ' + count);
   document.querySelector('.cart-call').hidden = count === 0;
   document.querySelector('.cart-hint').hidden = count === 0;
+  cartDialog.setAttribute('aria-labelledby', compactCart.matches ? 'cart-mobile-title' : 'cart-title');
+  document.querySelector('.cart-call').textContent = compactCart.matches ? 'Позвонить в кафе' : 'Заказать по телефону';
+  document.querySelector('.cart-hint').textContent = compactCart.matches ? 'Чтобы уточнить наличие и сделать заказ, позвони в Sliders' : 'Заказ и наличие блюд уточним по телефону';
+  const hint = document.querySelector('.cart-hint');
+  if (compactCart.matches) document.querySelector('.cart-call').before(hint);
+  else document.querySelector('.cart-footer').prepend(hint);
+  document.querySelector('.cart-total span').textContent = compactCart.matches ? 'Итого' : 'Итого:';
+  updateRecommendations();
   document.getElementById('cart-status').textContent = 'В корзине порций: ' + count + '. Итого ' + rubles(total);
   if (persist && cartStorageAvailable) try { localStorage.setItem(cartStorageKey, JSON.stringify([...cart])); } catch { cartStorageAvailable = false; }
 }
@@ -494,6 +544,17 @@ cartItems.addEventListener('click', event => {
   const nextFocus = available.find(item => item.dataset.cartAction === action) || available[0];
   (nextFocus || cartDialog.querySelector('.cart-close')).focus({preventScroll:true});
 });
+document.getElementById('cart-recommendations').addEventListener('click', event => {
+  const button = event.target.closest('[data-cart-recommend]');
+  if (!button || !dishes.has(button.dataset.cartRecommend)) return;
+  const id = button.dataset.cartRecommend;
+  readSavedCart();
+  cart.set(id, Math.min(99, (cart.get(id) || 0) + 1));
+  updateCart();
+  document.getElementById('cart-status').textContent = dishes.get(id).name + ' добавлено. Итого ' + document.getElementById('cart-total').textContent;
+  const addedRowControl = [...cartItems.querySelectorAll('[data-cart-action]')].find(item => item.dataset.id === id && item.dataset.cartAction === 'more');
+  (addedRowControl || cartDialog.querySelector('.cart-close')).focus({preventScroll:true});
+});
 cartDialog.querySelectorAll('.cart-close,.cart-continue').forEach(button => button.addEventListener('click', () => cartDialog.close()));
 cartDialog.addEventListener('click', event => {
   if (event.target !== cartDialog) return;
@@ -505,6 +566,7 @@ cartDialog.addEventListener('close', () => {
   if (cartReturnFocus?.isConnected) cartReturnFocus.focus({preventScroll:true});
 });
 updateCart();
+compactCart.addEventListener('change', () => updateCart(false));
 window.addEventListener('pageshow', event => {
   if (event.persisted) { readSavedCart(); updateCart(false); }
 });
