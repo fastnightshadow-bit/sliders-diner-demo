@@ -24,10 +24,11 @@
     description.hidden = ingredients.length > 0;
     list.replaceChildren(...ingredients.map(name => {
       const row = document.createElement('li'), label = document.createElement('label');
-      const input = document.createElement('input'), text = document.createElement('span');
+      const input = document.createElement('input'), mark = document.createElement('span'), text = document.createElement('span');
       input.type = 'checkbox'; input.checked = true; input.value = name;
-      text.textContent = name;
-      label.append(input, text); row.append(label); return row;
+      mark.className = 'ingredient-checkmark'; mark.setAttribute('aria-hidden', 'true');
+      text.className = 'ingredient-name'; text.textContent = name;
+      label.append(input, mark, text); row.append(label); return row;
     }));
     refresh();
   }
