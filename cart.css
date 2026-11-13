@@ -56,6 +56,7 @@
 .cart-total strong:after{content:'';position:absolute;bottom:-6px;left:0;right:0;border-top:5px solid var(--red);border-radius:70%;transform:rotate(-4deg)}
 .cart-dialog .cart-call{padding:14px 18px;min-height:64px;border:0;outline:0;border-radius:15px;background:var(--red);color:#fff0d5;box-shadow:0 3px 0 #78100c;font:500 23px/1.2 var(--title);text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;white-space:normal;transition:background .15s,transform .15s}
 .cart-call svg{width:23px;height:23px;flex-shrink:0}
+.cart-call>span{font:inherit}
 .cart-dialog .cart-call:hover{background:var(--deep)}
 .cart-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
 .cart-dialog .cart-hint{font:10px/1.4 var(--body);color:#755039;margin:0;max-width:250px}
