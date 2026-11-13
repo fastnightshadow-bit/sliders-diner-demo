@@ -80,6 +80,7 @@
   .mobile-cart-dock .dock-action{display:flex;align-items:center;justify-content:center;gap:13px;flex-shrink:0;min-height:41px;padding:9px 18px;background:#ffebc7;color:#85150f;border-radius:30px;font:600 italic 18px/1 var(--title);text-transform:uppercase}
   .dock-action:after{content:'';width:7px;height:7px;border-top:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg)}
   .has-cart-dock footer{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+  .has-cart-dock .hero-button{bottom:calc(90px + env(safe-area-inset-bottom))}
   .dialog-open .mobile-cart-dock{display:none}
   .has-cart-dock .menu-toast{bottom:calc(88px + env(safe-area-inset-bottom))}
   /* One native dialog, styled as a bottom sheet on phones. */
@@ -128,7 +129,7 @@
   .cart-suggestion button{grid-column:2;grid-row:3;width:33px;height:32px;align-self:center;justify-self:end;padding:0;display:grid;place-items:center;min-height:0;gap:0;font-size:0;line-height:0;border:0;border-radius:9px;background:#a71914;color:#fff0d5;box-shadow:none}
   .cart-suggestion button span{font:24px/1 Arial,sans-serif}
   .cart-checkout{display:flex;align-items:center;gap:13px;padding:10px 9px;margin-top:12px;border:1px solid #b969424f;border-radius:18px;background:var(--cart-paper)}
-  .cart-dialog .cart-total{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px;flex:1;margin:0;text-transform:none;font:500 italic 21px/1 var(--title);min-width:0}
+  .cart-dialog .cart-total{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px;flex:1.15;margin:0;text-transform:none;font:500 italic 21px/1 var(--title);min-width:0}
   .cart-dialog .cart-total strong{font:600 26px/1 var(--title);color:#a71914;white-space:nowrap}
   .cart-dialog .cart-call{flex:1.35;width:auto;padding:11px 7px;min-height:42px;border:0;border-left:1px solid transparent;outline:0;border-radius:30px;background:#a71914;color:#ffebc7;box-shadow:0 2px 0 #79140e;font:600 italic 19px/1.1 var(--title);text-transform:none;white-space:nowrap;display:flex;justify-content:center;align-items:center;gap:10px}
   .cart-call:after{content:'';width:7px;height:7px;border-top:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg)}
