@@ -170,6 +170,7 @@ favoriteButtons.forEach(button => button.addEventListener('click', () => {
   if (favorites.has(id)) favorites.delete(id); else favorites.add(id);
   if (favoritesStorageAvailable) try { localStorage.setItem(favoritesStorageKey, JSON.stringify([...favorites])); } catch { favoritesStorageAvailable = false; }
   updateFavoriteButtons();
+  window.SlidersMobile?.animateFavorite(button, favorites.has(id));
   applyMenuFilters();
   showMenuFeedback(favorites.has(id) ? 'Сохранено в избранном' : 'Убрано из избранного');
   if (button.closest('.food-card').hidden) menuTags.querySelector('[data-menu-tag="favorite"]').focus({preventScroll:true});
@@ -324,6 +325,7 @@ document.querySelectorAll('[data-open-dish]').forEach(button => {
     document.getElementById('dialog-ingredients').replaceChildren(...dish.ingredients.map(text => {
       const li = document.createElement('li'); li.textContent = text; return li;
     }));
+    window.SlidersMobileDialogs?.prepare(dialog);
     dialog.showModal();
     document.body.classList.add('dialog-open');
     dialog.querySelector('.dialog-shell').scrollTop = 0;
@@ -519,6 +521,7 @@ function openCart(returnFocus = cartToggle) {
   readSavedCart(); updateCart(false);
   cartReturnFocus = returnFocus;
   if (dialog.open) dialog.close();
+  window.SlidersMobileDialogs?.prepare(cartDialog);
   cartDialog.showModal(); document.body.classList.add('dialog-open');
   cartDialog.querySelector('.cart-close').focus({preventScroll:true});
 }
