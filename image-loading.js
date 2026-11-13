@@ -10,7 +10,7 @@
   const sourceOf = image => image.currentSrc || image.src;
   const isDecoded = image => image.complete && image.naturalWidth > 0 && decoded.get(image) === sourceOf(image);
 
-  function prepareImage(image) {
+  function prepareImage(image, timeout = 4000) {
     if (isDecoded(image)) return Promise.resolve(image);
     if (pending.has(image)) return pending.get(image);
     image.loading = 'eager';
@@ -26,7 +26,7 @@
         resolve(image);
       };
       // A failed/stalled photo must never lock category navigation.
-      const timer = setTimeout(finish, 4000);
+      const timer = timeout ? setTimeout(finish, timeout) : null;
       if (typeof image.decode === 'function') image.decode().then(finish, finish);
       else if (image.complete) finish();
       else {
@@ -40,7 +40,7 @@
   }
 
   function prepare(ids = [...photos.keys()]) {
-    return Promise.all(ids.map(id => photos.get(id)).filter(Boolean).map(prepareImage));
+    return Promise.all(ids.map(id => photos.get(id)).filter(Boolean).map(image => prepareImage(image)));
   }
 
   function prepareDetail(id, priority = 'low') {
@@ -58,7 +58,9 @@
       details.set(id, image);
     }
     image.fetchPriority = priority;
-    return prepareImage(image);
+    // Dialogs already show their cached preview, so a slow detail may finish
+    // whenever the network allows. Only category navigation needs a timeout.
+    return prepareImage(image, 0);
   }
 
   function create(dish, detail = false) {
