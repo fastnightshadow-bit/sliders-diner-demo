@@ -615,20 +615,3 @@ window.addEventListener('scroll', () => {
 }, {passive:true});
 desktopQuery.addEventListener('change', updateDesktopHeader);
 updateDesktopHeader();
-
-// Only activate the visible desktop/mobile map close to its viewport.
-const pendingMaps = [...document.querySelectorAll('iframe[data-src]')];
-if (pendingMaps.length) {
-  const loadMap = frame => { frame.src = frame.dataset.src; delete frame.dataset.src; };
-  if ('IntersectionObserver' in window) {
-    const mapObserver = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && entry.target.getBoundingClientRect().width > 0) {
-          loadMap(entry.target); mapObserver.unobserve(entry.target);
-        }
-      });
-    }, {rootMargin:'250px'});
-    pendingMaps.forEach(frame => mapObserver.observe(frame));
-  } else pendingMaps.forEach(loadMap);
-}
-
